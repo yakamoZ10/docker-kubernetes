@@ -32,7 +32,7 @@ jobs:
           project_id: ${{ env.GCP_PROJECT }}
 
       - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker $REGISTRY --quiet
+        run: gcloud auth configure-docker europe-central2-docker.pkg.dev --quiet
 
       - name: Build Docker images
         run: |
