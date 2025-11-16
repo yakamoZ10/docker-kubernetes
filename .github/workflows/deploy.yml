@@ -9,7 +9,7 @@ env:
   PROJECT_ID: multi-k8s-478410
   REGION: europe-central2
   REGISTRY: europe-central2-docker.pkg.dev/multi-k8s-478410/multi-container-registry
-  CLUSTER_NAME: ardin-k8s
+  CLUSTER_NAME: ardin-k8ss
   SHA: ${{ github.sha }}
 
 jobs:
