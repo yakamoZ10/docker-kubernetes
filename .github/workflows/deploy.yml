@@ -1,0 +1,79 @@
+name: Build and Deploy to GKE
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  GCP_PROJECT: "multi-k8s-478410"
+  GCP_REGION: "europe-central2"
+  GKE_CLUSTER: "ardin-k8s"
+  REGISTRY: "europe-central2-docker.pkg.dev/multi-k8s-478410/multi-container-registry"
+
+jobs:
+
+  build:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Auth to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ env.GCP_PROJECT }}
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker $REGISTRY --quiet
+
+      - name: Build Docker images
+        run: |
+          docker build -t $REGISTRY/client:latest ./client
+          docker build -t $REGISTRY/server:latest ./server
+          docker build -t $REGISTRY/worker:latest ./worker
+          docker build -t $REGISTRY/nginx:latest ./nginx
+
+      - name: Push Docker images
+        run: |
+          docker push $REGISTRY/client:latest
+          docker push $REGISTRY/server:latest
+          docker push $REGISTRY/worker:latest
+          docker push $REGISTRY/nginx:latest
+
+  deploy:
+    name: Deploy to GKE
+    runs-on: ubuntu-latest
+    needs: build     # <---- waits for build job to finish successfully
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Auth to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ env.GCP_PROJECT }}
+
+      - name: Get GKE Credentials
+        run: |
+          gcloud container clusters get-credentials $GKE_CLUSTER --region $GCP_REGION
+
+      - name: Apply Kubernetes manifests
+        run: |
+          kubectl apply -f Kubernetes
+          kubectl rollout restart deployment/client-deployment
+          kubectl rollout restart deployment/server-deployment
+          kubectl rollout restart deployment/worker-deployment
