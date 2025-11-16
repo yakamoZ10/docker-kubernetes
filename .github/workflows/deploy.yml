@@ -36,7 +36,6 @@ jobs:
           docker build -t $REGISTRY/client:latest -t $REGISTRY/client:${SHA} ./client
           docker build -t $REGISTRY/server:latest -t $REGISTRY/server:${SHA} ./server
           docker build -t $REGISTRY/worker:latest -t $REGISTRY/worker:${SHA} ./worker
-          docker build -t $REGISTRY/nginx:latest -t $REGISTRY/nginx:${SHA} ./nginx
 
       # ---- PUSH BOTH TAGS ----
       - name: Push images
@@ -49,9 +48,6 @@ jobs:
 
           docker push $REGISTRY/worker:latest
           docker push $REGISTRY/worker:${SHA}
-
-          docker push $REGISTRY/nginx:latest
-          docker push $REGISTRY/nginx:${SHA}
 
   deploy:
     name: Deploy to GKE
@@ -83,4 +79,4 @@ jobs:
           kubectl set image deployment/client-deployment client=$REGISTRY/client:${SHA}
           kubectl set image deployment/server-deployment server=$REGISTRY/server:${SHA}
           kubectl set image deployment/worker-deployment worker=$REGISTRY/worker:${SHA}
-          kubectl set image deployment/nginx-deployment nginx=$REGISTRY/nginx:${SHA}
+
